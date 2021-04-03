@@ -12,16 +12,6 @@
 #define PIN_BUTTON_KICK PC0
 #define PIN_BUTTON_SNARE PC1
 
-// Miscellaneous constants
-#define F_TONE 440U
-
-// Audio time
-volatile uint8_t i = 0;
-// True if audio playing
-volatile uint8_t loud = 0;
-// Next state of loud
-volatile uint8_t nextLoud = 0;
-
 static NoiseGenerator kick = {
 	// Mask
 	0x00 | BM_NG_SOUNDING,
@@ -89,14 +79,6 @@ void main() {
 }
 
 ISR (TIMER0_COMPA_vect) {
-//	if (loud) {
-//		if (i == 2UL * SAMPLE_RATE / F_TONE) {
-//			PORTB ^= (1 << PIN_SPEAKER);
-//			i = 0;
-//		} else {
-//			i++;
-//		}
-//	}
 	stepNoise(&kick);
 	stepNoise(&snare);
 	if (getSample(&kick)) {
