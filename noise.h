@@ -9,6 +9,12 @@
 #define FREQ_TO_SAMPLES(freq) (SAMPLE_RATE / freq)
 #define MS_TO_SAMPLES(ms) ((((uint32_t) SAMPLE_RATE) * ms) / 1000)
 
+// Stores a rational number
+typedef struct _Fraction {
+	uint8_t top;
+	uint8_t bottom;	
+} Fraction;
+
 /* 
  * Stores information necessary to represent
  * a one-shot, band-limited, decaying noise
@@ -24,9 +30,8 @@ typedef struct _NoiseTimbre {
 	/*
 	 * The odds that on a given sample (within the frequency range)
 	 * That an audio rising or falling edge will occur
-	 * Given as a 1/n chance
 	 */
-	uint8_t swapChance;
+	Fraction swapChance;
 	// Duration in samples of the noise
 	uint16_t duration;
 } NoiseTimbre;

@@ -18,9 +18,9 @@ void stepNoise(NoiseGenerator *noiseGen) {
 		} else {
 			if ((
 				(
-				 	noiseGen->dtLastSwap > noiseGen->timbre.lowPass
+				 	noiseGen->dtLastSwap < noiseGen->timbre.lowPass
 				) && (
-					rand() % noiseGen->timbre.swapChance == 0
+					rand() % noiseGen->timbre.swapChance.bottom < noiseGen->timbre.swapChance.top
 				)
 			) || (
 				noiseGen->dtLastSwap > noiseGen->timbre.highPass
