@@ -3,20 +3,12 @@
 #include <avr/interrupt.h>
 #include "main.h"
 #include "noise.h"
+#include "loop.h"
 
-
-// Pins
-// Port B
-#define PIN_SPEAKER PB0
-// PORT C
-#define PIN_BUTTON_KICK PC0
-#define PIN_BUTTON_SNARE PC1
-#define PIN_BUTTON_HI_HAT PC2
-#define PIN_MASK_BUTTONS ((1 << PIN_BUTTON_KICK) | (1 << PIN_BUTTON_SNARE) | (1 << PIN_BUTTON_HI_HAT))
 // Misc Constants
 #define INPUT_SAMPLE_DIV 16
 
-static NoiseGenerator kick = {
+NoiseGenerator kick = {
 	// Mask
 	0x00,
 	// Time
@@ -36,7 +28,7 @@ static NoiseGenerator kick = {
 	}
 };
 
-static NoiseGenerator snare = {
+NoiseGenerator snare = {
 	// Mask
 	0x00,
 	// Time
@@ -56,7 +48,7 @@ static NoiseGenerator snare = {
 	}
 };
 
-static NoiseGenerator hiHat = {
+NoiseGenerator hiHat = {
 	// Mask
 	0x00,
 	// Time
@@ -76,11 +68,17 @@ static NoiseGenerator hiHat = {
 	}
 };
 
+/*
+ * The number of the current sample
+ * Used for clock dividing
+ */
 uint8_t iSample = 0;
-uint8_t buttonLastStateMask = 0x00;
+// Last state of PINC
+uint8_t lastPinC = 0x00;
+// Last state of PIND
+uint8_t lastPinD = 0x00;
 
 void pollButtons();
-
 
 void main() {
 	// Set up Timer 0 for main loop interrupt
@@ -92,28 +90,17 @@ void main() {
 	OCR0A = (F_CPU / 64) / SAMPLE_RATE;
 	// Enable compare/match interrupt
 	TIMSK0 |= (1 << OCIE0A);
-	
-	// Enable button interrupt
-	// Enable interrupt group
-//	PCICR |= (1 << PCIE1);
-	// Enable interrupt pins
-//	PCMSK1 |= (1 << PCINT8) | (1 << PCINT9) | (1 << PCINT10);
 
 	// Set port data directions
-	DDRB |= (1 << PIN_SPEAKER);
-	DDRC &= ~(
-		(1 << PIN_BUTTON_KICK)
-		| (1 << PIN_BUTTON_SNARE)
-		| (1 << PIN_BUTTON_HI_HAT)
-	);
+	DDRB |= (1 << PINB_SPEAKER);
+	DDRC &= ~PINC_MASK_BUTTONS;
+	DDRD |= (1 << PIND_LED_RECORD) | (1 << PIND_LED_PLAY);
+	DDRD &= ~PIND_MASK_BUTTONS;
 
 	// Enable button pull ups
-	PORTC |= (
-		(1 << PIN_BUTTON_KICK)
-		| (1 << PIN_BUTTON_SNARE)
-		| (1 << PIN_BUTTON_HI_HAT)
-	);
-
+	PORTC |= PINC_MASK_BUTTONS;
+	PORTD |= PIND_MASK_BUTTONS;
+	
 	// Enable global interrupts
 	sei();
 	
@@ -134,28 +121,43 @@ ISR (TIMER0_COMPA_vect) {
 	stepNoise(&hiHat);
 
 	if (getSample(&kick)) {
-		PORTB ^= (1 << PIN_SPEAKER);
+		PORTB ^= (1 << PINB_SPEAKER);
 		clearSample(&kick);
 	} else if (getSample(&snare)) {
-		PORTB ^= (1 << PIN_SPEAKER);
+		PORTB ^= (1 << PINB_SPEAKER);
 		clearSample(&snare);
 	} else if (getSample(&hiHat)) {
-		PORTB ^= (1 << PIN_SPEAKER);
+		PORTB ^= (1 << PINB_SPEAKER);
 		clearSample(&hiHat);
 	}
 }
 
 
 void pollButtons() {
-//ISR (PCINT1_vect) {
-	if ((PINC & (1 << PIN_BUTTON_KICK)) == 0 && (buttonLastStateMask & (1 << PIN_BUTTON_KICK))) {
+	// Port C
+	uint8_t hits = 0x00;
+	
+	if ((PINC & (1 << PINC_BUTTON_KICK)) == 0 && (lastPinC & (1 << PINC_BUTTON_KICK))) {
 		startNoise(&kick);
+		hits |= (1 << PINC_BUTTON_KICK);
 	}
-	if ((PINC & (1 << PIN_BUTTON_SNARE)) == 0 && (buttonLastStateMask & (1 << PIN_BUTTON_SNARE))) {
+	if ((PINC & (1 << PINC_BUTTON_SNARE)) == 0 && (lastPinC & (1 << PINC_BUTTON_SNARE))) {
 		startNoise(&snare);
+		hits |= (1 << PINC_BUTTON_SNARE);
 	}
-	if ((PINC & (1 << PIN_BUTTON_HI_HAT)) == 0 && (buttonLastStateMask & (1 << PIN_BUTTON_HI_HAT))) {
+	if ((PINC & (1 << PINC_BUTTON_HI_HAT)) == 0 && (lastPinC & (1 << PINC_BUTTON_HI_HAT))) {
 		startNoise(&hiHat);
+		hits |= (1 << PINC_BUTTON_HI_HAT);
 	}
-	buttonLastStateMask = PINC & PIN_MASK_BUTTONS;
+	lastPinC = PINC & PINC_MASK_BUTTONS;
+	stepLoop(hits);
+	
+	// Port D
+	if ((PIND & (1 << PIND_BUTTON_PLAY)) == 0 && (lastPinD & (1 << PIND_BUTTON_PLAY))) {
+		playLoop();
+	} else if ((PIND & (1 << PIND_BUTTON_RECORD)) == 0 && (lastPinD & (1 << PIND_BUTTON_RECORD))) {
+		recordLoop();
+	}
+	lastPinD = PIND & PIND_MASK_BUTTONS;
 }
+
