@@ -22,9 +22,11 @@ static NoiseGenerator kick = {
 	// Timbre
 	{
 		// High pass
-		FREQ_TO_SAMPLES(20) * 2,
+		FREQ_TO_SAMPLES(10) * 2,
 		// Low Pass
-		FREQ_TO_SAMPLES(60) * 2,
+		FREQ_TO_SAMPLES(400) * 2,
+		// Swap chance
+		16,
 		// Duration
 		MS_TO_SAMPLES(100)
 	}
@@ -32,7 +34,7 @@ static NoiseGenerator kick = {
 
 static NoiseGenerator snare = {
 	// Mask
-	0x00 | BM_NG_SOUNDING,
+	0x00,
 	// Time
 	0,
 	// Last Swap
@@ -40,11 +42,13 @@ static NoiseGenerator snare = {
 	// Timbre
 	{
 		// High pass
-		FREQ_TO_SAMPLES(300) * 2,
+		FREQ_TO_SAMPLES(400) * 2,
 		// Low Pass
 		FREQ_TO_SAMPLES(8000) * 2,
+		// Swap chance
+		2,
 		// Duration
-		MS_TO_SAMPLES(100)
+		MS_TO_SAMPLES(75)
 	}
 };
 

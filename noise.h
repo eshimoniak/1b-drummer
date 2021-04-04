@@ -21,6 +21,12 @@ typedef struct _NoiseTimbre {
 	uint16_t highPass;
 	// One half the period of the low-pass filter in samples
 	uint16_t lowPass;
+	/*
+	 * The odds that on a given sample (within the frequency range)
+	 * That an audio rising or falling edge will occur
+	 * Given as a 1/n chance
+	 */
+	uint8_t swapChance;
 	// Duration in samples of the noise
 	uint16_t duration;
 } NoiseTimbre;

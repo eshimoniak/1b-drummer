@@ -10,7 +10,8 @@ CC=avr-gcc
 
 all: $(HEX)
 
-main.o: main.c
+main.o: main.c main.h
+nosie.o: noise.c noise.h main.h
 
 flash: $(HEX)
 	avrdude -v -c $(PRGMR) -p m328p -U flash:w:$(HEX)
