@@ -2,3 +2,8 @@
 *.elf
 *.hex
 *.o
+schematics/*.lib
+schematics/*.pro
+schematics/*.sch-bak
+schematics/*.kicad_pcb
+
